@@ -10,6 +10,7 @@ pub mod crypto;
 pub mod encoding;
 pub mod error;
 pub mod merkle;
+pub mod storage;
 pub mod transaction;
 pub mod types;
 
