@@ -3,6 +3,7 @@
 // Scaffold only: remove once every `todo!()` is implemented.
 #![allow(unused_variables)]
 
+pub mod block;
 pub mod certificate;
 pub mod crypto;
 pub mod encoding;
