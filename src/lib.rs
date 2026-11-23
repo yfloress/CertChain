@@ -3,6 +3,7 @@
 // Scaffold only: remove once every `todo!()` is implemented.
 #![allow(unused_variables)]
 
+pub mod encoding;
 pub mod error;
 pub mod types;
 
