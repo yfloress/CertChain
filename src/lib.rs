@@ -5,6 +5,7 @@
 
 pub mod block;
 pub mod certificate;
+pub mod chain;
 pub mod crypto;
 pub mod encoding;
 pub mod error;
