@@ -2,3 +2,8 @@
 
 // Scaffold only: remove once every `todo!()` is implemented.
 #![allow(unused_variables)]
+
+pub mod error;
+pub mod types;
+
+pub use error::{Error, Result};
