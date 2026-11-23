@@ -7,6 +7,7 @@ pub mod certificate;
 pub mod crypto;
 pub mod encoding;
 pub mod error;
+pub mod transaction;
 pub mod types;
 
 pub use error::{Error, Result};
