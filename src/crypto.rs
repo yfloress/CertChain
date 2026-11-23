@@ -34,10 +34,24 @@ impl KeyPair {
 }
 
 pub fn sha256(data: &[u8]) -> Digest {
-    todo!()
+    use sha2::{Digest as _, Sha256};
+    Digest(Sha256::digest(data).into())
 }
 
 /// Must use `verify_strict`, which rejects weak keys.
 pub fn verify(public_key: &PublicKey, message: &[u8], signature: &Signature) -> Result<()> {
     todo!()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sha256_abc() {
+        assert_eq!(
+            sha256(b"abc").to_string(),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+    }
 }
