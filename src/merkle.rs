@@ -44,7 +44,28 @@ pub fn root(leaves: &[Digest]) -> Digest {
 
 /// Sibling path for `index`, or `None` if out of range.
 pub fn inclusion_path(leaves: &[Digest], index: u64) -> Option<Vec<Digest>> {
-    todo!()
+    let index = usize::try_from(index).ok()?;
+    if index >= leaves.len() {
+        return None;
+    }
+    let mut path = Vec::new();
+    collect_path(leaves, index, &mut path);
+    Some(path)
+}
+
+fn collect_path(leaves: &[Digest], index: usize, path: &mut Vec<Digest>) {
+    let n = leaves.len();
+    if n <= 1 {
+        return;
+    }
+    let k = split_point(n);
+    if index < k {
+        collect_path(&leaves[..k], index, path);
+        path.push(root(&leaves[k..]));
+    } else {
+        collect_path(&leaves[k..], index - k, path);
+        path.push(root(&leaves[..k]));
+    }
 }
 
 pub fn verify_inclusion(
@@ -54,7 +75,29 @@ pub fn verify_inclusion(
     path: &[Digest],
     root: &Digest,
 ) -> bool {
-    todo!()
+    if index >= tree_size {
+        return false;
+    }
+    let mut node = index;
+    let mut last = tree_size - 1;
+    let mut hash = *leaf;
+    for p in path {
+        if last == 0 {
+            return false;
+        }
+        if node & 1 == 1 || node == last {
+            hash = node_hash(p, &hash);
+            while node & 1 == 0 && node != 0 {
+                node >>= 1;
+                last >>= 1;
+            }
+        } else {
+            hash = node_hash(&hash, p);
+        }
+        node >>= 1;
+        last >>= 1;
+    }
+    last == 0 && hash == *root
 }
 
 #[cfg(test)]
@@ -114,5 +157,65 @@ mod tests {
         let mut four = three.clone();
         four.push(three[2]);
         assert_ne!(root(&three), root(&four));
+    }
+
+    #[test]
+    fn path_out_of_range() {
+        assert_eq!(inclusion_path(&leaves(3), 3), None);
+        assert_eq!(inclusion_path(&[], 0), None);
+    }
+
+    #[test]
+    fn proofs_verify_for_every_leaf() {
+        for n in [1, 2, 3, 5, 8] {
+            let tree = leaves(n);
+            let r = root(&tree);
+            for (i, leaf) in tree.iter().enumerate() {
+                let i = i as u64;
+                let path = inclusion_path(&tree, i).unwrap();
+                assert!(
+                    verify_inclusion(leaf, i, n as u64, &path, &r),
+                    "n={n} i={i}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn altered_path_fails() {
+        let tree = leaves(5);
+        let r = root(&tree);
+        let mut path = inclusion_path(&tree, 2).unwrap();
+        path[0].0[0] ^= 1;
+        assert!(!verify_inclusion(&tree[2], 2, 5, &path, &r));
+        path.pop();
+        assert!(!verify_inclusion(&tree[2], 2, 5, &path, &r));
+    }
+
+    #[test]
+    fn altered_index_fails() {
+        let tree = leaves(5);
+        let r = root(&tree);
+        let path = inclusion_path(&tree, 2).unwrap();
+        assert!(!verify_inclusion(&tree[2], 3, 5, &path, &r));
+        assert!(!verify_inclusion(&tree[2], 5, 5, &path, &r));
+    }
+
+    #[test]
+    fn altered_size_fails() {
+        let tree = leaves(5);
+        let r = root(&tree);
+        let path = inclusion_path(&tree, 4).unwrap();
+        assert!(!verify_inclusion(&tree[4], 4, 6, &path, &r));
+        assert!(!verify_inclusion(&tree[4], 4, 8, &path, &r));
+    }
+
+    #[test]
+    fn altered_leaf_or_root_fails() {
+        let tree = leaves(8);
+        let r = root(&tree);
+        let path = inclusion_path(&tree, 6).unwrap();
+        assert!(!verify_inclusion(&tree[5], 6, 8, &path, &r));
+        assert!(!verify_inclusion(&tree[6], 6, 8, &path, &tree[0]));
     }
 }
